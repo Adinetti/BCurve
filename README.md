@@ -5,5 +5,5 @@
 
 **DOCUMENTATION.**
 
-BCurve.GetPoint:
--Return point (Vector3) on current curve by current time. Time must be from 0 to 1.
+*BCurve.GetPoint:*
+- Return point (Vector3) on current curve by current time. Time must be from 0 to 1.
