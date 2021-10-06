@@ -1,9 +1,15 @@
 # Bezier curve creator.
 
-- To create a simple curve, simply create an empty game object and add a BCurve component to it. 
-- For creating a new node click by "Create node" button.
-
 **DOCUMENTATION.**
 
-*BCurve.GetPoint:*
+*Curve.CreateNewNode:*
+- Create a new node in the specified coordinates
+
+*Curve.GetNode*
+- Get node by index 
+
+*Curve.GetPoint*
 - Return point (Vector3) on current curve by current time. Time must be from 0 to 1.
+
+*CurveNode.WithOneTangent*
+- If true node tangents lead the network as one.

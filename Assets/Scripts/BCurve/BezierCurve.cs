@@ -4,35 +4,52 @@ using UnityEngine;
 using UnityEditor;
 
 namespace BCurve {
-    public class Curve : MonoBehaviour {
+    [ExecuteAlways]
+    public class BezierCurve : MonoBehaviour {
         [SerializeField] private CurveNode[] _nodes;
         [SerializeField] [Range(0, 1)] private float _timer;
         [SerializeField] private bool _isClosed;
-        private int _nextPointID;
 
         public int NodesCount => _nodes.Length;
         public bool IsClosed => _isClosed;
 
-        public void CreateNewPoint(Vector3 position) {
-            RefreshPoints();
-            var point = CreatePointIn(position);
-            _nodes = GetComponentsInChildren<CurveNode>();
-            _nextPointID += 1;
-            RefreshPoints();
+        private void Update() {
+            if (NodeIsChanged()) {
+                RefreshPoints();
+            }
+        }
+
+        private bool NodeIsChanged() {
+            foreach (var nodes in _nodes) {
+                if (nodes == null) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         public void RefreshPoints() {
             _nodes = GetComponentsInChildren<CurveNode>();
             foreach (var point in _nodes) {
-                if (point.ID >= _nextPointID) {
-                    _nextPointID = point.ID + 1;
-                }
                 point.RefreshNeighbors();
             }
         }
 
-        public CurveNode GetNode(int order) {
-            return _nodes[order];
+        public void CreateNewNode(Vector3 position) {
+            CreateNodeIn(position);
+            RefreshPoints();
+        }
+
+        private void CreateNodeIn(Vector3 position) {
+            var go = new GameObject($"Point_{_nodes.Length}", typeof(CurveNode));
+            var point = go.GetComponent<CurveNode>();
+            point.transform.position = position;
+            point.transform.parent = transform;
+            point.Init(this);
+        }
+
+        public CurveNode GetNode(int index) {
+            return _nodes[index];
         }
 
         public Vector3 GetPoint(float time) {
@@ -45,8 +62,8 @@ namespace BCurve {
             }
             var endOrder = IsClosed ? _nodes.Length : _nodes.Length - 1;
             time = time * (endOrder);
-            var dt  = (time) % 1;
-            var segmentID  = (int)time;
+            var dt = (time) % 1;
+            var segmentID = (int)time;
             if (IsClosed || segmentID < _nodes.Length - 1) {
                 return GetPoint(segmentID, dt);
             }
@@ -61,30 +78,17 @@ namespace BCurve {
             return GetPoint(startNode.Position, endNode.Position, startTangent, endTangent, dt);
         }
 
-        private Vector3 GetPoint(Vector3 start, Vector3 end, Vector3 tangentA, Vector3 tangentB, float time) {
-            var a = Vector3.Lerp(start, tangentA, time);
-            var b = Vector3.Lerp(tangentA, tangentB, time);
-            var c = Vector3.Lerp(tangentB, end, time);
-            var d = Vector3.Lerp(a, b, time);
-            var e = Vector3.Lerp(b, c, time);
-            return Vector3.Lerp(d, e, time);
+        private Vector3 GetPoint(Vector3 start, Vector3 end, Vector3 startTangent, Vector3 endTangent, float time) {
+            var a = Vector3.Lerp(start, startTangent, time);
+            var b = Vector3.Lerp(startTangent, endTangent, time);
+            var c = Vector3.Lerp(endTangent, end, time);
+            var ab = Vector3.Lerp(a, b, time);
+            var bc = Vector3.Lerp(b, c, time);
+            return Vector3.Lerp(ab, bc, time);
         }
 
-        private CurveNode CreatePointIn(Vector3 position) {
-            var go = new GameObject($"Point_{_nextPointID}", typeof(CurveNode));
-            var point = go.GetComponent<CurveNode>();
-            point.transform.position = position;
-            point.transform.parent = transform;
-            point.Init(_nextPointID, this);
-            return point;
-        }
-
+#if UNITY_EDITOR
         private void OnDrawGizmos() {
-            foreach (var point in _nodes) {
-                if (point == null) {
-                    RefreshPoints();
-                }
-            }
             if (_nodes?.Length > 1) {
                 DrawBezierCurve();
                 var pointer = GetPoint(_timer);
@@ -94,7 +98,6 @@ namespace BCurve {
         }
 
         private void DrawBezierCurve() {
-#if UNITY_EDITOR
             var endOrder = _isClosed ? _nodes.Length : _nodes.Length - 1;
             for (int i = 0; i < endOrder; i++) {
                 var startCurve = _nodes[i];
@@ -106,8 +109,8 @@ namespace BCurve {
                                         startTangent, endTangent, Color.white, Texture2D.whiteTexture, 1f);
                 }
             }
-#endif
         }
+#endif
     }
 }
 
