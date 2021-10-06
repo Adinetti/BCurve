@@ -9,6 +9,7 @@ using UnityEngine.EventSystems;
 namespace BCurve {
     [ExecuteAlways]
     public class Tangent : MonoBehaviour {
+        [SerializeField] private float _gizmoSize = 0.5f;
         [SerializeField] private Tangent _neighbor;
         private Vector3 _neighborPosition;
         private CurveNode _parentNode;
@@ -41,7 +42,7 @@ namespace BCurve {
 
         private void OnDrawGizmos() {
             Gizmos.color = Color.blue;
-            Gizmos.DrawSphere(transform.position, 1);
+            Gizmos.DrawSphere(transform.position, _gizmoSize);
         }
     }
 }
